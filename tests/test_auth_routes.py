@@ -9,7 +9,10 @@ from tests.conftest import VALID_REGISTER
 def test_health(client):
     r = client.get("/health")
     assert r.status_code == 200
-    assert r.json() == {"status": "ok"}
+    body = r.json()
+    assert body["status"] == "ok"
+    # Identifica o código no ar (commit e banco em uso).
+    assert body["commit"] and body["db"] == "SqliteDatabase"
 
 
 def test_register_sets_cookie_and_hides_pin(client):

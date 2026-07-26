@@ -1,5 +1,6 @@
 """Aplicação FastAPI do Taxipay."""
 
+import os
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
@@ -57,4 +58,13 @@ app.include_router(notifications.router)
 
 @app.get("/health", tags=["health"])
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    """Estado da app + de onde ela veio.
+
+    O commit e a classe do banco dizem qual código está de facto no ar — útil
+    para não depurar uma deployment antiga achando que é a nova.
+    """
+    return {
+        "status": "ok",
+        "commit": os.getenv("VERCEL_GIT_COMMIT_SHA", "local")[:7],
+        "db": type(db.obj).__name__ if db.obj is not None else "none",
+    }
