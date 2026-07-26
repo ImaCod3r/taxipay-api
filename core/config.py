@@ -28,3 +28,14 @@ COOKIE_SAMESITE: str = os.getenv("COOKIE_SAMESITE", "lax").lower()
 # Domínio opcional do cookie (ex.: ".taxipay.ao"). Vazio => host atual.
 COOKIE_DOMAIN: str | None = os.getenv("COOKIE_DOMAIN") or None
 COOKIE_MAX_AGE: int = ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
+
+# ---- Banco de dados ----
+# Connection string do Postgres (produção):
+#   postgresql://usuario:senha@host/banco?sslmode=require
+# Vazio => cai no SQLite local (dev/testes).
+DATABASE_URL: str | None = os.getenv("DATABASE_URL") or None
+SQLITE_PATH: str = os.getenv("SQLITE_PATH", "./database.db")
+# Cria as tabelas que faltarem na subida da app. Desligue (false) quando
+# passar a usar migrações versionadas.
+AUTO_CREATE_TABLES: bool = _as_bool(os.getenv("AUTO_CREATE_TABLES", "true"))

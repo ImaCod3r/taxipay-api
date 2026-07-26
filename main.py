@@ -5,22 +5,34 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from database.config import db
+from core.config import AUTO_CREATE_TABLES
+from database.config import db, init_database
 from models.ledger import LedgerEntry
 from models.notification import Notification
 from models.user import User
 from routers import auth, notifications, wallet
 
-# Origens do frontend 
+# Origens do frontend
 ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://127.0.0.1:5173",
 ]
 
+MODELS = [User, LedgerEntry, Notification]
+
 def init_db() -> None:
-    """Abre a conexão e garante as tabelas."""
+    """Resolve o banco (Postgres via DATABASE_URL) e garante as tabelas."""
+    init_database()
+    if not AUTO_CREATE_TABLES:
+        return
+    # Só devolvemos a conexão se fomos nós que a abrimos.
+    was_open = not db.is_closed()
     db.connect(reuse_if_open=True)
-    db.create_tables([User, LedgerEntry, Notification])
+    try:
+        db.create_tables(MODELS, safe=True)
+    finally:
+        if not was_open and not db.is_closed():
+            db.close()
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):

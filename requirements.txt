@@ -6,6 +6,7 @@ fastapi-cli==0.0.32
 httpx==0.28.1
 idna==3.18
 peewee==4.2.6
+psycopg[binary]==3.3.4
 PyJWT==2.13.0
 pydantic==2.13.4
 pydantic_core==2.46.4

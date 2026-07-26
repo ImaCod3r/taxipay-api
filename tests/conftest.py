@@ -4,6 +4,7 @@ import os
 import tempfile
 
 import pytest
+from peewee import SqliteDatabase
 
 from database.config import db
 from models.ledger import LedgerEntry
@@ -20,12 +21,16 @@ VALID_REGISTER = {
 
 @pytest.fixture(scope="session", autouse=True)
 def _database():
-    """Aponta o Peewee para um SQLite temporário só dos testes."""
+    """Aponta o Peewee para um SQLite temporário só dos testes.
+
+    Como o proxy já fica inicializado aqui, o `init_database()` da app não o
+    sobrescreve — os testes nunca tocam o Postgres de produção.
+    """
     path = os.path.join(tempfile.gettempdir(), "taxipay_pytest.db")
     if os.path.exists(path):
         os.remove(path)
 
-    db.init(path)
+    db.initialize(SqliteDatabase(path))
     db.connect()
     db.create_tables([User, LedgerEntry, Notification])
     yield
