@@ -68,3 +68,16 @@ class UserResponse(BaseModel):
     driver_code: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class SessionResponse(UserResponse):
+    """Resposta de login/registo.
+
+    A web autentica pelo cookie HttpOnly e nunca recebe ``token`` — mantendo o
+    JWT fora do alcance do JavaScript (resistente a XSS). O app mobile não tem
+    cookie jar fiável, por isso pede o token com o header ``X-Client: mobile``,
+    guarda-o no keystore e envia-o em ``Authorization: Bearer``
+    (ver ``core.deps._extract_token``).
+    """
+
+    token: str | None = None

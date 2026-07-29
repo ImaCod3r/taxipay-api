@@ -93,3 +93,56 @@ def test_logout_clears_cookie(client, registered_user):
     assert logout.status_code == 204
     # Cookie removido => /me passa a negar.
     assert client.get("/auth/me").status_code == 401
+
+
+# --- Sessão do app mobile (sem cookie jar): token no corpo + Bearer ---
+
+
+def test_web_client_never_receives_token(client):
+    """Sem `X-Client: mobile`, o JWT fica só no cookie HttpOnly."""
+    r = client.post("/auth/register", json=VALID_REGISTER)
+    assert r.status_code == 201, r.text
+    assert r.json()["token"] is None
+    assert r.cookies.get(COOKIE_NAME)
+
+
+def test_mobile_client_receives_token_on_register(client):
+    r = client.post("/auth/register", json=VALID_REGISTER, headers={"X-Client": "mobile"})
+    assert r.status_code == 201, r.text
+    assert r.json()["token"]
+
+
+def test_mobile_client_receives_token_on_login(client, registered_user):
+    r = client.post(
+        "/auth/login",
+        json={"phone": "923456789", "pin": "1234"},
+        headers={"X-Client": "mobile"},
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["token"]
+
+
+def test_mobile_token_authenticates_without_cookie(make_client):
+    """O fluxo do app: regista, guarda o token e opera só com Bearer."""
+    signup = make_client()
+    token = signup.post(
+        "/auth/register", json=VALID_REGISTER, headers={"X-Client": "mobile"}
+    ).json()["token"]
+
+    # Cliente novo => cookie jar vazio, tal como o app mobile.
+    mobile = make_client()
+    auth = {"Authorization": f"Bearer {token}"}
+
+    assert mobile.get("/auth/me", headers=auth).json()["phone"] == "923456789"
+
+    deposit = mobile.post(
+        "/wallet/deposit", json={"amount": 5000, "idempotency_key": "dep-1"}, headers=auth
+    )
+    assert deposit.status_code == 201, deposit.text
+    assert deposit.json()["balance"] == 5000
+
+
+def test_mobile_deposit_without_token_is_rejected(make_client):
+    make_client().post("/auth/register", json=VALID_REGISTER, headers={"X-Client": "mobile"})
+    r = make_client().post("/wallet/deposit", json={"amount": 5000})
+    assert r.status_code == 401
