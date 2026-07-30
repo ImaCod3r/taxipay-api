@@ -46,6 +46,10 @@ class TransactionResponse(BaseModel):
     amount: int
     description: str
     createdAt: int  # epoch em ms
+    # Agrupa as duas linhas de um pagamento; serve de comprovativo no detalhe.
+    reference: str
+    # Contraparte legível (código do cobrador, telefone do pagador).
+    counterparty: str | None
 
     @classmethod
     def from_entry(cls, entry: LedgerEntry) -> "TransactionResponse":
@@ -56,6 +60,8 @@ class TransactionResponse(BaseModel):
             amount=entry.amount,
             description=entry.description,
             createdAt=int(entry.created_at.timestamp() * 1000),
+            reference=entry.reference,
+            counterparty=entry.counterparty,
         )
 
 
